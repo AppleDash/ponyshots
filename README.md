@@ -5,11 +5,15 @@ An insanely simple screenshot uploading "web app".
 
 Seriously, it doesn't really get any simpler than this.
 
+## Setup
+
 Copy inc/db.example.php to inc/db.php and edit it with your MySQL database credentials. Also, you probably want to import schema.sql from this repo.
 
 Insert a row or two containing usernames and API keys so that you can actually use the service. How to do so should be self-explanatory. The password field in the users table is currently unused.
 
 I have a rewrite set up to route `https://mydomain.tld/ps/(.*)` to `/ps/index.php?page=$1` in nginx.
+
+## Usage
 
 To upload a screenshot, hit /upload with a multipart POST containing:
 
@@ -37,3 +41,8 @@ location ~ /[a-zA-Z0-9]+$ {
 This way, images will be accessible at `https://mydomain.tld/<slug>`.
 
 That's about all there is to it, really.
+
+## Potential improvements
+
+* Use PDO instead of MySQLi (I wrote this a long time ago)
+* Stop using PHP
