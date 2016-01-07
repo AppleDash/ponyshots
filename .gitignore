@@ -1,0 +1,5 @@
+.idea/
+inc/db.php
+images/
+!images/.placeholder
+
