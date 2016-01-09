@@ -39,6 +39,8 @@ if ($arr["apikey"] !== $apikey) {
     dieerr("API key provided is invalid for user!");
 }
 
+$user_id = $arr["apikey"];
+
 if (!isset($_FILES["image"])) {
     dieerr("No image file given!");
 }
@@ -64,7 +66,7 @@ if (!in_array($ext, array("gif", "png", "jpg", "jpeg"))) {
 move_uploaded_file($_FILES["image"]["tmp_name"], "images/${slug}.${ext}");
 
 $escaped_filename = mysqli_real_escape_string($db, $filename);
-$q = "INSERT INTO images (original_name, hash, slug) VALUES ('${escaped_filename}', '${hash}', '${slug}')";
+$q = "INSERT INTO images (user_id, original_name, hash, slug) VALUES (${user_id}, '${escaped_filename}', '${hash}', '${slug}')";
 mysqli_query($db, $q);
 
 echo json_encode(array("error" => false, "hash" => $hash, "slug" => $slug, "extension" => $ext));
