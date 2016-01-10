@@ -21,6 +21,22 @@ function generateRandomString($length=10) {
     return $randomString;
 }
 
+$host = strtolower($_SERVER["HTTP_HOST"]);
+
+if (empty($host)) {
+    dieerr("No Host header sent");
+}
+
+$escaped_host = mysqli_real_escape_string($host);
+$res = mysqli_query($db, "SELECT * FROM hosts WHERE host='${escaped_host}'");
+
+if (mysqli_num_rows($res) == 0) {
+    dieerr("Host not authorized");
+}
+
+$arr = mysqli_fetch_assoc($res);
+$host_id = $arr["id"];
+
 if (!isset($_POST["username"]) || !isset($_POST["apikey"])) {
     dieerr("Username and API key are needed!");
 }
@@ -30,6 +46,7 @@ $apikey = mysqli_real_escape_string($db, $_POST["apikey"]);
 
 $q = "SELECT * FROM users WHERE username='${username}'";
 $res = mysqli_query($db, $q);
+
 if (mysqli_num_rows($res) === 0) {
     dieerr("There is no user by that name!");
 }
@@ -63,10 +80,10 @@ if (!in_array($ext, array("gif", "png", "jpg", "jpeg"))) {
     die("Invalid file type uploaded!");
 }
 
-move_uploaded_file($_FILES["image"]["tmp_name"], "images/${slug}.${ext}");
+move_uploaded_file($_FILES["image"]["tmp_name"], "images/${host}/${slug}.${ext}");
 
 $escaped_filename = mysqli_real_escape_string($db, $filename);
-$q = "INSERT INTO images (user_id, original_name, hash, slug) VALUES (${user_id}, '${escaped_filename}', '${hash}', '${slug}')";
+$q = "INSERT INTO images (user_id, host_id, original_name, hash, slug) VALUES (${user_id}, ${host_id}, '${escaped_filename}', '${hash}', '${slug}')";
 mysqli_query($db, $q);
 
 echo json_encode(array("error" => false, "hash" => $hash, "slug" => $slug, "extension" => $ext));
