@@ -27,7 +27,7 @@ if (empty($host)) {
     dieerr("No Host header sent");
 }
 
-$escaped_host = mysqli_real_escape_string($host);
+$escaped_host = mysqli_real_escape_string($db, $host);
 $res = mysqli_query($db, "SELECT * FROM hosts WHERE host='${escaped_host}'");
 
 if (mysqli_num_rows($res) == 0) {
