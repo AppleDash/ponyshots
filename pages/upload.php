@@ -80,6 +80,14 @@ if (!in_array($ext, array("gif", "png", "jpg", "jpeg"))) {
     die("Invalid file type uploaded!");
 }
 
+if (!file_exists("images/")) {
+    mkdir("images/");
+}
+
+if (!file_exists("images/${host}")) {
+    mkdir("images/${host}");
+}
+
 move_uploaded_file($_FILES["image"]["tmp_name"], "images/${host}/${slug}.${ext}");
 
 $escaped_filename = mysqli_real_escape_string($db, $filename);
