@@ -25,7 +25,7 @@ if (empty($host)) {
     dieerr("No Host header sent");
 }
 
-$res = db_query("SELECT * FROM hosts WHERE host=?", [$escaped_host]);
+$res = db_query("SELECT * FROM hosts WHERE host=?", [$host]);
 
 if ($res->rowCount() == 0) {
     dieerr("Host not authorized");
