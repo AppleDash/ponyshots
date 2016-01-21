@@ -67,7 +67,7 @@ while (!$good) {
     $good = true;
     $slug = generateRandomString(7);
     $sres = db_query("SELECT * FROM images WHERE slug=?", [$slug]);
-    if ($res->rowCount() > 0) {
+    if ($sres->rowCount() > 0) {
         $good = false;
     }
 }
