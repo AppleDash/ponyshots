@@ -57,5 +57,4 @@ That's about all there is to it, really.
 
 ## Potential improvements
 
-* Use PDO instead of MySQLi (I wrote this a long time ago)
 * Stop using PHP
