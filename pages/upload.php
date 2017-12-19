@@ -1,5 +1,6 @@
 <?php
-include_once("inc/db.php");
+require_once("inc/db.php");
+require_once("inc/settings.php");
 header("Content-Type: application/json");
 
 function makeerr($msg) {
@@ -64,11 +65,10 @@ $slug = null;
 $good = false;
 
 while (!$good) {
-    $good = true;
     $slug = generateRandomString(7);
     $sres = db_query("SELECT * FROM images WHERE slug=?", [$slug]);
-    if ($sres->rowCount() > 0) {
-        $good = false;
+    if ($sres->rowCount() == 0) {
+        $good = true;
     }
 }
 
@@ -76,15 +76,11 @@ if (!in_array($ext, array("gif", "png", "jpg", "jpeg"))) {
     die("Invalid file type uploaded!");
 }
 
-if (!file_exists("images/")) {
-    mkdir("images/");
+if (!file_exists("${settings['upload_path']}/${host}")) {
+    mkdir("${settings['upload_path']}/${host}");
 }
 
-if (!file_exists("images/${host}")) {
-    mkdir("images/${host}");
-}
-
-move_uploaded_file($_FILES["image"]["tmp_name"], "images/${host}/${slug}.${ext}");
+move_uploaded_file($_FILES["image"]["tmp_name"], "${settings['upload_path']}/${host}/${slug}.${ext}");
 
 db_query("INSERT INTO images (user_id, host_id, original_name, hash, slug) VALUES (?, ?, ?, ?, ?)", [$user_id, $host_id, $filename, $hash, $slug]);
 

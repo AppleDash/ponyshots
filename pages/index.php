@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>PonyShots.</title>
+        <title>PonyShots | Index</title>
     </head>
     <body>
         <center>
