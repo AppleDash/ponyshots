@@ -88,7 +88,7 @@ do {
 
 move_uploaded_file($_FILES["image"]["tmp_name"], "${settings['upload_path']}/${host}/${slug}.${original_extension}");
 
-db_query("INSERT INTO uploads (user_id, host_id, original_filename, sha512_hash, slug) VALUES (?, ?, ?, ?, ?)", [$user_id, $host_id, $filename, $hash, $slug]);
+db_query("INSERT INTO uploads (user_id, host_id, original_filename, sha512_hash, slug) VALUES (?, ?, ?, ?, ?)", [$user_id, $host_id, $original_file_name, $hash, $slug]);
 
 /* placeholder count can only be 1 or 2 as per check above */
 $image_url = $number_of_placeholders == 1
