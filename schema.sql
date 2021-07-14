@@ -1,38 +1,51 @@
-SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-SET AUTOCOMMIT = 0;
-START TRANSACTION;
-SET time_zone = "+00:00";
-CREATE DATABASE IF NOT EXISTS `ponyshots` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-USE `ponyshots`;
+create table hosts
+(
+    id serial not null
+        constraint hosts_pk
+        primary key,
+    host varchar not null,
+    url_format varchar not null
+);
 
-CREATE TABLE IF NOT EXISTS `hosts` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `host` varchar(255) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
+alter table hosts owner to appledash;
 
-CREATE TABLE IF NOT EXISTS `images` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) NOT NULL,
-  `host_id` int(11) NOT NULL,
-  `original_name` varchar(2048) NOT NULL,
-  `hash` varchar(64) NOT NULL,
-  `slug` varchar(16) NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `user_id_index` (`user_id`),
-  KEY `host_id` (`host_id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
+create unique index hosts_host_uindex
+    on hosts (host);
 
-CREATE TABLE IF NOT EXISTS `users` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `username` varchar(32) NOT NULL,
-  `password` varchar(128) NOT NULL,
-  `apikey` varchar(128) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
+create table users
+(
+    id integer not null
+        constraint users_pk
+        primary key,
+    username varchar not null,
+    api_key varchar default gen_random_uuid() not null
+);
 
+alter table users owner to appledash;
 
-ALTER TABLE `images`
-  ADD CONSTRAINT `images_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE;
-COMMIT;
+create unique index users_username_uindex
+    on users (username);
+
+create table uploads
+(
+    id serial not null
+        constraint uploads_pk
+        primary key,
+    user_id integer
+        constraint uploads_users_id_fk
+        references users
+        on update restrict on delete restrict,
+    host_id integer
+        constraint uploads_hosts_id_fk
+        references hosts
+        on update restrict on delete restrict,
+    original_filename varchar not null,
+    sha512_hash varchar not null,
+    slug varchar not null
+);
+
+alter table uploads owner to appledash;
+
+create unique index uploads_slug_uindex
+    on uploads (slug);
 

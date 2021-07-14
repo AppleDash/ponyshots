@@ -1,89 +1,102 @@
 <?php
+
+use JetBrains\PhpStorm\NoReturn;
+
 require_once("inc/db.php");
 require_once("inc/settings.php");
 header("Content-Type: application/json");
 
-function makeerr($msg) {
+function makeerr(string $msg) : string {
     return json_encode(array("error" => true, "message" => $msg));
 }
 
-function dieerr($m) {
+#[NoReturn]
+function die_with_error(string $m) : void {
     die(makeerr($m));
 }
 
-function generateRandomString($length=10) {
-    $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    $randomString = '';
-    for ($i = 0; $i < $length; $i++) {
-        $randomString .= $characters[rand(0, strlen($characters) - 1)];
-    }
-    return $randomString;
+function generateSlug() : string {
+    do {
+        $encoded_bytes = base64_encode(random_bytes(6));
+        $seven_bytes = substr(
+            str_replace(['/', '+'], '', $encoded_bytes),
+            0, 7
+        );
+    } while (strlen($seven_bytes) !== 7); /* This can happen if the base64 contained both a slash AND a plus */
+
+    return $seven_bytes;
 }
 
-$host = strtolower($_SERVER["HTTP_HOST"]);
 
-if (empty($host)) {
-    dieerr("No Host header sent");
+if (empty($_SERVER["HTTP_HOST"])) {
+    die_with_error("No Host header sent");
 }
 
-$res = db_query("SELECT * FROM hosts WHERE host=?", [$host]);
-
-if ($res->rowCount() == 0) {
-    dieerr("Host not authorized");
+if (empty($_POST["username"]) || empty($_POST["api_key"])) {
+    die_with_error("Username and API key are needed!");
 }
-
-$host_id = $res->fetch()["id"];
-
-if (!isset($_POST["username"]) || !isset($_POST["apikey"])) {
-    dieerr("Username and API key are needed!");
-}
-
-$apikey = $_POST["apikey"];
-
-$res = db_query("SELECT * FROM users WHERE username=?", [$_POST["username"]]);
-
-if ($res->rowCount() === 0) {
-    dieerr("There is no user by that name!");
-}
-
-$arr = $res->fetch();
-
-if ($arr["apikey"] !== $apikey) {
-    dieerr("API key provided is invalid for user!");
-}
-
-$user_id = $arr["id"];
 
 if (!isset($_FILES["image"])) {
-    dieerr("No image file given!");
+    die_with_error("No image file given!");
 }
 
-$filename = $_FILES["image"]["name"];
-$ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-$hash = sha1_file($_FILES["image"]["tmp_name"]);
-$slug = null;
-$good = false;
-
-while (!$good) {
-    $slug = generateRandomString(7);
-    $sres = db_query("SELECT * FROM images WHERE slug=?", [$slug]);
-    if ($sres->rowCount() == 0) {
-        $good = true;
-    }
-}
+$original_file_name = $_FILES["image"]["name"];
+$original_extension = strtolower(pathinfo($original_file_name, PATHINFO_EXTENSION));
 
 if (!in_array($ext, array("gif", "png", "jpg", "jpeg"))) {
     die("Invalid file type uploaded!");
+}
+
+$host = strtolower($_SERVER["HTTP_HOST"]);
+$username = $_POST['username'];
+$api_key = $_POST['api_key'];
+
+$res = db_query("SELECT id, url_format FROM hosts WHERE host = ?", [$host]);
+$host_row = $res->fetch();
+
+if (!$host_row) {
+    die_with_error("Host not authorized");
+}
+
+$host_id = $host_row['id'];
+$url_format = $host_row['url_format'];
+
+$number_of_placeholders = substr_count($url_format, '%s');
+
+if ($number_of_placeholders < 1 || $number_of_placeholders > 2) {
+    die_with_error('Internal error (invalid URL format)');
 }
 
 if (!file_exists("${settings['upload_path']}/${host}")) {
     mkdir("${settings['upload_path']}/${host}");
 }
 
+$res = db_query("SELECT id FROM users WHERE username = ? AND api_key = ?", [$username, $api_key]);
+$user_row = $res->fetch();
+
+if (!$user_row) {
+    die_with_error("Invalid username or API key.");
+}
+
+$user_id = $user_row["id"];
+$hash = hash_file('SHA512', $_FILES["image"]["tmp_name"]);
+$slug = null;
+
+do {
+    $slug = generateSlug();
+} while (db_query('SELECT 1 FROM images WHERE slug = ?', [$slug])->fetch()); /* While slug exists in DB */
+
+
 move_uploaded_file($_FILES["image"]["tmp_name"], "${settings['upload_path']}/${host}/${slug}.${ext}");
 
 db_query("INSERT INTO images (user_id, host_id, original_name, hash, slug) VALUES (?, ?, ?, ?, ?)", [$user_id, $host_id, $filename, $hash, $slug]);
 
-echo json_encode(array("error" => false, "hash" => $hash, "slug" => $slug, "extension" => $ext));
+/* placeholder count can only be 1 or 2 as per check above */
+$image_url = $number_of_placeholders == 1
+                ? sprintf($url_format, $slug)
+                : sprintf($url_format, $slug, $ext);
 
-?>
+echo json_encode([
+    'error' => false,
+    'url' => $image_url
+]);
