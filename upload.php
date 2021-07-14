@@ -6,13 +6,12 @@ require_once("inc/db.php");
 require_once("inc/settings.php");
 header("Content-Type: application/json");
 
-function makeerr(string $msg) : string {
-    return json_encode(array("error" => true, "message" => $msg));
-}
-
 #[NoReturn]
-function die_with_error(string $m) : void {
-    die(makeerr($m));
+function die_with_error(string $message) : void {
+    die(json_encode([
+        'error' => true,
+        'message' => $message
+    ]));
 }
 
 function generateSlug() : string {
@@ -43,8 +42,8 @@ if (!isset($_FILES["image"])) {
 $original_file_name = $_FILES["image"]["name"];
 $original_extension = strtolower(pathinfo($original_file_name, PATHINFO_EXTENSION));
 
-if (!in_array($ext, array("gif", "png", "jpg", "jpeg"))) {
-    die("Invalid file type uploaded!");
+if (!in_array($original_extension, array("gif", "png", "jpg", "jpeg"))) {
+    die_with_error("Invalid file type uploaded!");
 }
 
 $host = strtolower($_SERVER["HTTP_HOST"]);
@@ -87,14 +86,14 @@ do {
 } while (db_query('SELECT 1 FROM images WHERE slug = ?', [$slug])->fetch()); /* While slug exists in DB */
 
 
-move_uploaded_file($_FILES["image"]["tmp_name"], "${settings['upload_path']}/${host}/${slug}.${ext}");
+move_uploaded_file($_FILES["image"]["tmp_name"], "${settings['upload_path']}/${host}/${slug}.${original_extension}");
 
 db_query("INSERT INTO images (user_id, host_id, original_name, hash, slug) VALUES (?, ?, ?, ?, ?)", [$user_id, $host_id, $filename, $hash, $slug]);
 
 /* placeholder count can only be 1 or 2 as per check above */
 $image_url = $number_of_placeholders == 1
                 ? sprintf($url_format, $slug)
-                : sprintf($url_format, $slug, $ext);
+                : sprintf($url_format, $slug, $original_extension);
 
 echo json_encode([
     'error' => false,
