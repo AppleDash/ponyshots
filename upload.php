@@ -83,12 +83,12 @@ $slug = null;
 
 do {
     $slug = generateSlug();
-} while (db_query('SELECT 1 FROM images WHERE slug = ?', [$slug])->fetch()); /* While slug exists in DB */
+} while (db_query('SELECT 1 FROM uploads WHERE slug = ?', [$slug])->fetch()); /* While slug exists in DB */
 
 
 move_uploaded_file($_FILES["image"]["tmp_name"], "${settings['upload_path']}/${host}/${slug}.${original_extension}");
 
-db_query("INSERT INTO images (user_id, host_id, original_name, hash, slug) VALUES (?, ?, ?, ?, ?)", [$user_id, $host_id, $filename, $hash, $slug]);
+db_query("INSERT INTO uploads (user_id, host_id, original_name, hash, slug) VALUES (?, ?, ?, ?, ?)", [$user_id, $host_id, $filename, $hash, $slug]);
 
 /* placeholder count can only be 1 or 2 as per check above */
 $image_url = $number_of_placeholders == 1
