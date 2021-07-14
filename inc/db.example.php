@@ -19,5 +19,3 @@ function db_query($query, $params=null) {
 
     return $stmt;
 }
-
-?>
